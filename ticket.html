@@ -8,13 +8,15 @@
     <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .seat-map-container {
+                .seat-map-container {
             margin: 30px auto;
             max-width: 1000px;
             padding: 20px;
             background: rgba(0, 0, 0, 0.03);
             border-radius: 15px;
             position: relative;
+            /* 新增：给容器加横向滚动支撑，防止座位溢出容器 */
+            overflow: hidden;
         }
         
         .seat-map {
@@ -23,6 +25,11 @@
             gap: 6px;
             margin-bottom: 20px;
             position: relative;
+            /* 新增：固定网格最小宽度，确保15列座位完整显示 */
+            min-width: fit-content;
+            /* 新增：居中网格，适配大屏幕 */
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .seat {
@@ -41,6 +48,8 @@
             font-size: 11px;
             color: white;
             border: 2px solid #27ae60;
+            /* 新增：防止座位被压缩，保证点击区域 */
+            flex-shrink: 0;
         }
         
         .seat:hover {
@@ -206,20 +215,32 @@
             border: 1px solid #dee2e6;
         }
         
-                @media (max-width: 768px) {
+        @media (max-width: 768px) {
             /* 修复顶部间距 */
             .container.mt-5.pt-4 {
                 padding-top: 80px !important;
                 margin-top: 0 !important;
             }
             
-            /* 优化座位图 */
-            .seat-map {
-                grid-template-columns: repeat(12, 1fr); /* 减少列数 */
-                gap: 4px;
-                max-width: 100%;
+            /* 优化座位图 - 核心修复 */
+            .seat-map-container {
+                /* 关键：给容器开启横向滚动，手机端可以左右滑动看全部座位 */
                 overflow-x: auto;
-                padding: 10px;
+                /* 去除内边距，防止滚动时遮挡 */
+                padding: 20px 10px;
+            }
+            
+            .seat-map {
+                /* 保留15列网格，不修改列数，避免布局错位 */
+                grid-template-columns: repeat(15, 1fr);
+                gap: 4px;
+                /* 取消最大宽度限制，让座位完整显示 */
+                max-width: none;
+                /* 去除自动居中，避免滚动异常 */
+                margin-left: 0;
+                margin-right: 0;
+                /* 给网格加最小宽度，确保每列座位不被挤压 */
+                min-width: 500px;
             }
             
             /* 增大座位点击区域 */
@@ -230,9 +251,12 @@
                 min-width: 32px; /* 防止被压缩 */
             }
             
-            /* 行标签调整 */
+            /* 行标签调整 - 修复手机端溢出问题 */
             .row-label {
-                left: -15px;
+                /* 手机端隐藏行标签，避免遮挡和滚动异常（也可保留，调整left为5px） */
+                display: none;
+                /* 如需保留行标签，注释上面的display: none，启用下面这行 */
+                /* left: 5px; */
                 font-size: 11px;
             }
             
@@ -873,4 +897,5 @@
     </script>
     
 </body>
+
 </html>
