@@ -855,17 +855,87 @@ background-clip: text; /* 添加标准属性 */
                 margin-bottom: 10px;
             }
         }
+       /* 手机版答案信息位置调整 */
 /* 手机版答案信息位置调整 */
 @media (max-width: 768px) {
     .review-question {
         margin-bottom: 10px;
     }
+    
     .answer-info {
         margin-bottom: 15px;
-        padding: 10px;
+        padding: 12px 15px;
         background: #f8f9fa;
-        border-radius: 8px;
+        border-radius: 10px;
         border-left: 4px solid #4361ee;
+        width: 100%;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 1rem;
+    }
+    
+    .answer-info strong {
+        background: linear-gradient(135deg, #4361ee, #7209b7);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 6px;
+        margin: 0 5px;
+        display: inline-block;
+        min-width: 30px;
+        text-align: center;
+    }
+    
+    /* 修复选项标签位置 - 改为下方显示 */
+    .review-option {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 15px !important;
+        position: relative;
+    }
+    
+    .review-option .d-flex {
+        width: 100%;
+    }
+    
+    .review-option-letter {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1.1rem !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .review-option-text {
+        flex: 1;
+        padding-left: 10px;
+    }
+    
+    /* 标签放在下方 */
+    .option-tag-line {
+        width: 100%;
+        margin-top: 8px !important;
+        padding-left: 48px; /* 对齐文字：38px字母宽度 + 10px间距 */
+    }
+    
+    .option-tag {
+        display: inline-block;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        white-space: nowrap;
+        margin-left: 0 !important;
+    }
+    
+    .option-tag.correct {
+        background: var(--success-color) !important;
+        color: white !important;
+    }
+    
+    .option-tag.user {
+        background: var(--danger-color) !important;
+        color: white !important;
     }
 }
     </style>
@@ -1540,32 +1610,34 @@ background-clip: text; /* 添加标准属性 */
                 
                 // 生成选项
                 const optionsHTML = detail.options.map((option, optIndex) => {
-                    const isCorrectAnswer = optIndex === detail.correctAnswer;
-                    const isUserAnswer = optIndex === detail.userAnswer;
-                    let optionClass = '';
-                    let tagHTML = '';
-                    
-                    if (isCorrectAnswer && isUserAnswer) {
-                        optionClass = 'correct';
-                        tagHTML = '<span class="option-tag correct ms-2">✓ 您的选择</span>';
-                    } else if (isCorrectAnswer) {
-                        optionClass = 'correct';
-                        tagHTML = '<span class="option-tag correct ms-2">正确答案</span>';
-                    } else if (isUserAnswer && !isCorrect) {
-                        optionClass = 'user-wrong';
-                        tagHTML = '<span class="option-tag user ms-2">✗ 您的选择</span>';
-                    }
-                    
-                    const letter = String.fromCharCode(65 + optIndex);
-                    
-                    return `
-                        <div class="review-option ${optionClass}">
-                            <div class="review-option-letter">${letter}</div>
-                            <div class="review-option-text">${option}</div>
-                            ${tagHTML}
-                        </div>
-                    `;
-                }).join('');
+    const isCorrectAnswer = optIndex === detail.correctAnswer;
+    const isUserAnswer = optIndex === detail.userAnswer;
+    let optionClass = '';
+    let tagHTML = '';
+    
+    if (isCorrectAnswer && isUserAnswer) {
+        optionClass = 'correct';
+        tagHTML = '<div class="option-tag-line mt-2"><span class="option-tag correct">✓ 您的选择</span></div>';
+    } else if (isCorrectAnswer) {
+        optionClass = 'correct';
+        tagHTML = '<div class="option-tag-line mt-2"><span class="option-tag correct">正确答案</span></div>';
+    } else if (isUserAnswer && !isCorrect) {
+        optionClass = 'user-wrong';
+        tagHTML = '<div class="option-tag-line mt-2"><span class="option-tag user">✗ 您的选择</span></div>';
+    }
+    
+    const letter = String.fromCharCode(65 + optIndex);
+    
+    return `
+        <div class="review-option ${optionClass}">
+            <div class="d-flex align-items-center">
+                <div class="review-option-letter">${letter}</div>
+                <div class="review-option-text">${option}</div>
+            </div>
+            ${tagHTML}
+        </div>
+    `;
+}).join('');
                 
                 return `
     <div class="review-item ${isCorrect ? 'correct' : 'wrong'}">
@@ -1578,13 +1650,25 @@ background-clip: text; /* 添加标准属性 */
             </div>
         </div>
         
+        <!-- 题目 -->
         <div class="review-question">${detail.questionText}</div>
         
-        <div class="answer-info">
-            正确答案: <strong>${correctAnswerChar}</strong> | 
-            您的选择: <strong>${userAnswerChar}</strong>
+        <!-- 答案信息放在这里：题目下方，选项上方 -->
+        <div class="answer-info mb-3">
+            <div class="d-flex justify-content-around align-items-center p-3 bg-light rounded">
+                <div class="text-center">
+                    <div class="text-muted small mb-1">正确答案</div>
+                    <div class="h4 mb-0 text-success fw-bold">${correctAnswerChar}</div>
+                </div>
+                <div class="vr" style="height: 40px;"></div> <!-- 竖线分隔 -->
+                <div class="text-center">
+                    <div class="text-muted small mb-1">您的选择</div>
+                    <div class="h4 mb-0 text-primary fw-bold">${userAnswerChar}</div>
+                </div>
+            </div>
         </div>
         
+        <!-- 选项 -->
         <div class="review-options">
             ${optionsHTML}
         </div>
@@ -1693,5 +1777,4 @@ background-clip: text; /* 添加标准属性 */
         }
     </script>
 </body>
-
 </html>
