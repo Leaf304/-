@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 电影院风格，移动端优化 */
+        /* 原有样式保持不变... */
         * {
             margin: 0;
             padding: 0;
@@ -424,6 +424,102 @@
             box-shadow: 0 3px 10px rgba(67, 97, 238, 0.3);
         }
         
+        /* 支付弹窗 */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .payment-modal.active {
+            display: flex;
+        }
+        
+        .payment-content {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 30px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: modalAppear 0.3s ease;
+        }
+        
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .payment-header {
+            margin-bottom: 15px;
+        }
+        
+        .payment-header h3 {
+            color: #333;
+        }
+        
+        /* 二维码容器 - 改为3:4比例 (宽3长4) */
+        .qrcode-container {
+            width: 300px;  /* 宽度300px */
+            height: 400px; /* 高度400px (300:400 = 3:4) */
+            margin: 10px auto;
+            border: 15px solid #f8f9fa;
+            border-radius: 15px;
+            background: white;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 移除所有多余元素，只显示图片 */
+        .qrcode-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        
+        /* 删除多余的qrcode-placeholder样式 */
+        
+        .payment-instructions {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        .payment-instructions ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+        
+        .payment-instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .scan-timer {
+            font-size: 1.2rem;
+            color: #e74c3c;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
         /* 响应式调整 */
         @media (max-width: 480px) {
             .main-container {
@@ -466,6 +562,17 @@
                 padding: 10px 16px;
                 font-size: 0.9rem;
                 max-width: 280px;
+            }
+            
+            .payment-content {
+                padding: 20px;
+                width: 95%;
+            }
+            
+            .qrcode-container {
+                width: 225px;   /* 移动端等比缩小 */
+                height: 300px;  /* 保持3:4比例 */
+                border-width: 10px;
             }
         }
         
@@ -569,7 +676,7 @@
     <!-- 导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="#" onclick="goToHomePage()">
+            <a class="navbar-brand" href="#" id="homeLink">
                 <i class="fas fa-film me-2"></i>万人IMAX巨幕厅
             </a>
             <div class="navbar-text text-white">
@@ -577,6 +684,43 @@
             </div>
         </div>
     </nav>
+
+    <!-- 支付弹窗 -->
+    <div class="payment-modal" id="paymentModal">
+        <div class="payment-content">
+            <div class="payment-header">
+                <h3><i class="fas fa-qrcode me-2"></i>扫码支付</h3>
+                <p class="text-muted">请使用手机扫描二维码完成支付</p>
+            </div>
+            
+            <!-- 二维码容器 - 已简化，只显示图片 -->
+            <div class="qrcode-container">
+                <img src="images/payment/payment.jpg" alt="在线支付二维码">
+            </div>
+            
+            <div class="scan-timer" id="scanTimer">
+                请在 <span id="countdown">30</span> 秒内完成扫码
+            </div>
+            
+            <div class="payment-instructions">
+                <p><strong>支付说明：</strong></p>
+                <ul>
+                    <li>扫描上方二维码</li>
+                    <li>支付金额：<span id="paymentAmount" class="fw-bold">0 元</span></li>
+                    <li>支付完成后请点击"支付完成"按钮</li>
+                </ul>
+            </div>
+            
+            <div class="action-buttons mt-4">
+                <button class="action-btn btn-secondary" onclick="cancelPayment()">
+                    <i class="fas fa-times me-1"></i>取消支付
+                </button>
+                <button class="action-btn btn-success" onclick="completePayment()">
+                    <i class="fas fa-check me-1"></i>支付完成
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- 主内容区域 -->
     <div class="main-container">
@@ -602,6 +746,7 @@
                 <!-- 区域卡片会通过JS动态生成 -->
             </div>
             
+            <!-- 首页按钮已修复 -->
             <div class="action-buttons">
                 <button class="action-btn btn-secondary" onclick="goToHomePage()">
                     <i class="fas fa-home me-2"></i>返回首页
@@ -613,7 +758,7 @@
         <div id="pageSubareaSelect" class="page-container">
             <div class="top-nav">
                 <button class="nav-btn nav-btn-secondary" onclick="goToAreaSelect()">
-                    <i class="fas fa-arrow-left"></i> 返回
+                    <i class="fas fa-arrow-left"></i> 返回区域
                 </button>
                 <div class="nav-title" id="currentAreaTitle"></div>
                 <button class="nav-btn nav-btn-primary" onclick="goToHomePage()">
@@ -646,7 +791,7 @@
         <div id="pageSeatSelect" class="page-container">
             <div class="top-nav">
                 <button class="nav-btn nav-btn-secondary" onclick="goToSubareaSelect()">
-                    <i class="fas fa-arrow-left"></i> 返回
+                    <i class="fas fa-arrow-left"></i> 返回分区
                 </button>
                 <div class="nav-title" id="currentSubareaTitle"></div>
                 <button class="nav-btn nav-btn-primary" onclick="goToHomePage()">
@@ -739,7 +884,7 @@
                 <button class="action-btn btn-secondary" onclick="backToSeatSelection()">
                     <i class="fas fa-arrow-left me-1"></i>返回选座
                 </button>
-                <button class="action-btn btn-success" onclick="proceedToPayment()">
+                <button class="action-btn btn-success" onclick="showPaymentModal()">
                     <i class="fas fa-credit-card me-1"></i>模拟支付
                 </button>
             </div>
@@ -793,112 +938,161 @@
         const config = {
             "totalSeats": 10080,
             "rows": 120,
-            "baseSeatsPerRow": 20,
-            "colIncrement": 0.7,
+            "baseSeatsPerRow": 28, // 增加每排座位数
+            "colIncrement": 0, // 取消列数递增
             "hallName": "万人IMAX巨幕厅",
             "areas": [
                 { 
                     "name": "前排优选区", 
-                    "rowRange": [1, 20], 
+                    "rowRange": [1, 40],  // 扩大范围使分区更平均
                     "type": "premium", 
-                    "price": 120 
+                    "price": 34  // 统一价格34元
                 },
                 { 
                     "name": "中排VIP区", 
-                    "rowRange": [21, 60], 
+                    "rowRange": [41, 80],  // 扩大范围使分区更平均
                     "type": "vip", 
-                    "price": 90 
+                    "price": 34  // 统一价格34元
                 },
                 { 
                     "name": "后排普通区", 
-                    "rowRange": [61, 120], 
+                    "rowRange": [81, 120],  // 扩大范围使分区更平均
                     "type": "regular", 
-                    "price": 60 
+                    "price": 34  // 统一价格34元
                 }
             ],
             "subAreas": [
-                // 前排优选区 - 3个分区
+                // 重新分区，使每个分区座位数差距不超过20
+                // 前排优选区 - 3个分区 (每个约370-390个座位)
                 { 
                     "area": "premium", 
                     "subId": "P1", 
                     "name": "前排左区", 
-                    "rowRange": [1, 7], 
-                    "colRange": [1, 8], 
-                    "capacity": 56 
+                    "rowRange": [1, 13], 
+                    "colRange": [1, 10], 
+                    "capacity": 130 
                 },
                 { 
                     "area": "premium", 
                     "subId": "P2", 
                     "name": "前排中区", 
-                    "rowRange": [1, 7], 
-                    "colRange": [9, 16], 
-                    "capacity": 56 
+                    "rowRange": [1, 13], 
+                    "colRange": [11, 20], 
+                    "capacity": 130 
                 },
                 { 
                     "area": "premium", 
                     "subId": "P3", 
                     "name": "前排右区", 
-                    "rowRange": [8, 14], 
-                    "colRange": [1, 8], 
-                    "capacity": 56 
+                    "rowRange": [14, 26], 
+                    "colRange": [1, 10], 
+                    "capacity": 130 
                 },
-                // 中排VIP区 - 3个分区
+                { 
+                    "area": "premium", 
+                    "subId": "P4", 
+                    "name": "前排扩展区", 
+                    "rowRange": [14, 26], 
+                    "colRange": [11, 20], 
+                    "capacity": 130 
+                },
+                { 
+                    "area": "premium", 
+                    "subId": "P5", 
+                    "name": "前排补充区", 
+                    "rowRange": [27, 40], 
+                    "colRange": [1, 10], 
+                    "capacity": 140 
+                },
+                // 中排VIP区 - 3个分区 (每个约370-390个座位)
                 { 
                     "area": "vip", 
                     "subId": "V1", 
                     "name": "中排左区", 
-                    "rowRange": [21, 35], 
+                    "rowRange": [41, 53], 
                     "colRange": [1, 10], 
-                    "capacity": 150 
+                    "capacity": 130 
                 },
                 { 
                     "area": "vip", 
                     "subId": "V2", 
                     "name": "中排中区", 
-                    "rowRange": [21, 35], 
+                    "rowRange": [41, 53], 
                     "colRange": [11, 20], 
-                    "capacity": 150 
+                    "capacity": 130 
                 },
                 { 
                     "area": "vip", 
                     "subId": "V3", 
                     "name": "中排右区", 
-                    "rowRange": [36, 50], 
+                    "rowRange": [54, 66], 
                     "colRange": [1, 10], 
-                    "capacity": 150 
+                    "capacity": 130 
                 },
-                // 后排普通区 - 3个分区
+                { 
+                    "area": "vip", 
+                    "subId": "V4", 
+                    "name": "中排扩展区", 
+                    "rowRange": [54, 66], 
+                    "colRange": [11, 20], 
+                    "capacity": 130 
+                },
+                { 
+                    "area": "vip", 
+                    "subId": "V5", 
+                    "name": "中排补充区", 
+                    "rowRange": [67, 80], 
+                    "colRange": [1, 10], 
+                    "capacity": 140 
+                },
+                // 后排普通区 - 3个分区 (每个约370-390个座位)
                 { 
                     "area": "regular", 
                     "subId": "R1", 
                     "name": "后排左区", 
-                    "rowRange": [61, 80], 
-                    "colRange": [1, 12], 
-                    "capacity": 240 
+                    "rowRange": [81, 93], 
+                    "colRange": [1, 10], 
+                    "capacity": 130 
                 },
                 { 
                     "area": "regular", 
                     "subId": "R2", 
                     "name": "后排中区", 
-                    "rowRange": [61, 80], 
-                    "colRange": [13, 24], 
-                    "capacity": 240 
+                    "rowRange": [81, 93], 
+                    "colRange": [11, 20], 
+                    "capacity": 130 
                 },
                 { 
                     "area": "regular", 
                     "subId": "R3", 
                     "name": "后排右区", 
-                    "rowRange": [81, 100], 
-                    "colRange": [1, 12], 
-                    "capacity": 240 
+                    "rowRange": [94, 106], 
+                    "colRange": [1, 10], 
+                    "capacity": 130 
+                },
+                { 
+                    "area": "regular", 
+                    "subId": "R4", 
+                    "name": "后排扩展区", 
+                    "rowRange": [94, 106], 
+                    "colRange": [11, 20], 
+                    "capacity": 130 
+                },
+                { 
+                    "area": "regular", 
+                    "subId": "R5", 
+                    "name": "后排补充区", 
+                    "rowRange": [107, 120], 
+                    "colRange": [1, 10], 
+                    "capacity": 140 
                 }
             ],
-            "aisles": [5, 10, 15],
-            "disabledSeatsPercentage": 1,
+            "aisles": [], // 去掉过道设置
+            "disabledSeatsPercentage": 0, // 取消预留座位，全部可选
             "price": {
-                "premium": 120,
-                "vip": 90,
-                "regular": 60
+                "premium": 34, // 统一价格34元
+                "vip": 34,     // 统一价格34元
+                "regular": 34  // 统一价格34元
             }
         };
 
@@ -913,7 +1107,11 @@
             seatPrice: config.price,
             
             // 当前显示的座位数据
-            seatMapData: []
+            seatMapData: [],
+            
+            // 支付相关
+            paymentTimer: null,
+            countdown: 30
         };
 
         // ==================== 初始化 ====================
@@ -931,6 +1129,12 @@
             
             // 初始化门票日期
             updateTicketInfo();
+            
+            // 绑定导航栏返回首页按钮
+            document.getElementById('homeLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                goToHomePage();
+            });
             
             console.log('应用初始化完成');
         }
@@ -992,7 +1196,7 @@
             document.getElementById('currentStepText').textContent = texts[pageId] || '区域选择';
         }
 
-        // ==================== 首页功能 ====================
+        // ==================== 导航功能修复 ====================
         function goToHomePage() {
             // 重置状态
             appState.currentArea = null;
@@ -1004,10 +1208,22 @@
             
             // 清空选择显示
             updateSelectionDisplay();
+            
+            console.log('返回首页');
         }
 
         function goToAreaSelect() {
             showPage('AreaSelect');
+            console.log('返回区域选择');
+        }
+
+        function goToSubareaSelect() {
+            if (appState.currentArea) {
+                showPage('SubareaSelect');
+                console.log('返回分区选择');
+            } else {
+                goToAreaSelect();
+            }
         }
 
         // ==================== 区域选择 ====================
@@ -1032,7 +1248,7 @@
                     <div class="area-info">
                         <div>${subareaCount}个分区</div>
                         <div>${rowCount}排座位</div>
-                        <div class="fw-bold mt-1">¥${area.price}起/座</div>
+                        <div class="fw-bold mt-1">¥${area.price}/座</div>
                     </div>
                 `;
                 
@@ -1057,6 +1273,8 @@
             
             // 显示分区选择页面
             showPage('SubareaSelect');
+            
+            console.log(`选择区域: ${area.name}`);
         }
 
         // ==================== 分区选择 ====================
@@ -1066,7 +1284,12 @@
             
             const subareas = config.subAreas.filter(s => s.area === areaType);
             
+            // 计算每个分区的实际座位数
             subareas.forEach(subarea => {
+                const rows = subarea.rowRange[1] - subarea.rowRange[0] + 1;
+                const cols = subarea.colRange[1] - subarea.colRange[0] + 1;
+                const actualCapacity = rows * cols;
+                
                 const card = document.createElement('div');
                 card.className = 'subarea-card';
                 card.onclick = () => selectSubarea(subarea.subId);
@@ -1075,7 +1298,7 @@
                     <div class="subarea-name">${subarea.name}</div>
                     <div class="subarea-info">
                         <div>${subarea.rowRange[0]}-${subarea.rowRange[1]}排</div>
-                        <div>约${subarea.capacity}个座位</div>
+                        <div>${actualCapacity}个座位</div>
                     </div>
                     <div class="subarea-seats-preview">
                         ${subarea.colRange[0]}-${subarea.colRange[1]}列
@@ -1091,7 +1314,7 @@
             container.innerHTML = '';
             
             const [startRow, endRow] = area.rowRange;
-            const previewRows = Math.min(8, endRow - startRow + 1); // 最多显示8排预览
+            const previewRows = Math.min(8, endRow - startRow + 1);
             
             // 计算显示的排数（等比缩略）
             const rowStep = Math.ceil((endRow - startRow + 1) / previewRows);
@@ -1103,17 +1326,10 @@
                 const arcRow = document.createElement('div');
                 arcRow.className = 'seat-row';
                 
-                const rowCols = Math.floor(config.baseSeatsPerRow + (rowNum - 1) * config.colIncrement);
-                const previewCols = Math.min(15, rowCols); // 最多显示15列
-                const colStep = Math.ceil(rowCols / previewCols);
+                // 所有排都是相同列数
+                const previewCols = Math.min(20, config.baseSeatsPerRow);
                 
                 for (let j = 0; j < previewCols; j++) {
-                    const colNum = 1 + j * colStep;
-                    if (colNum > rowCols) break;
-                    
-                    // 跳过过道
-                    if (config.aisles.includes(colNum)) continue;
-                    
                     const seat = document.createElement('div');
                     seat.className = `seat ${area.type} available`;
                     seat.style.opacity = '0.7';
@@ -1125,14 +1341,6 @@
                 }
                 
                 container.appendChild(arcRow);
-            }
-        }
-
-        function goToSubareaSelect() {
-            if (appState.currentArea) {
-                showPage('SubareaSelect');
-            } else {
-                goToAreaSelect();
             }
         }
 
@@ -1156,6 +1364,8 @@
             
             // 显示座位选择页面
             showPage('SeatSelect');
+            
+            console.log(`选择分区: ${subarea.name}`);
         }
 
         function generateSeatMap(subarea) {
@@ -1165,18 +1375,8 @@
             const [startRow, endRow] = subarea.rowRange;
             const [startCol, endCol] = subarea.colRange;
             
-            // 生成已售座位
-            const bookedSeats = new Set();
-            const totalSeats = (endRow - startRow + 1) * (endCol - startCol + 1);
-            const bookedCount = Math.ceil(totalSeats * (config.disabledSeatsPercentage / 100));
-            
-            for (let i = 0; i < bookedCount; i++) {
-                const randomRow = startRow + Math.floor(Math.random() * (endRow - startRow + 1));
-                const randomCol = startCol + Math.floor(Math.random() * (endCol - startCol + 1));
-                bookedSeats.add(`R${randomRow}-C${randomCol}`);
-            }
-            
-            appState.bookedSeats = bookedSeats;
+            // 清空已售座位（全部可选）
+            appState.bookedSeats = new Set();
             appState.seatMapData = [];
             
             // 生成座位
@@ -1185,37 +1385,38 @@
                 arcRow.className = 'seat-row';
                 arcRow.dataset.row = row;
                 
-                const rowCols = Math.floor(config.baseSeatsPerRow + (row - 1) * config.colIncrement);
+                // 每排座位数量固定
+                const rowCols = config.baseSeatsPerRow;
                 
+                // 每个分区的列从1开始连续编号
                 for (let col = startCol; col <= endCol; col++) {
-                    if (col > rowCols) continue; // 确保列数不超过该排总列数
+                    if (col > rowCols) continue;
                     
-                    // 跳过过道
-                    if (config.aisles.includes(col)) continue;
+                    // 计算该座位在分区内的序号（从1开始）
+                    const seatNumberInSubarea = (row - startRow) * (endCol - startCol + 1) + (col - startCol) + 1;
                     
-                    const seatId = `R${row}-C${col}`;
+                    const seatId = `R${row}-C${col}-S${seatNumberInSubarea}`;
                     const seat = document.createElement('div');
                     seat.className = `seat ${appState.currentArea.type}`;
                     seat.dataset.seatId = seatId;
                     seat.dataset.row = row;
                     seat.dataset.col = col;
-                    seat.textContent = col;
+                    seat.dataset.subareaSeatNumber = seatNumberInSubarea;
                     
-                    // 检查是否已售
-                    if (bookedSeats.has(seatId)) {
-                        seat.classList.add('occupied');
-                        seat.title = `已售 ${row}排${col}座`;
-                    } else {
-                        seat.classList.add('available');
-                        seat.onclick = () => toggleSeat(seatId);
-                        seat.title = `${row}排${col}座`;
-                    }
+                    // 显示分区内座位序号（1,2,3...）
+                    seat.textContent = seatNumberInSubarea;
+                    
+                    // 所有座位都可选
+                    seat.classList.add('available');
+                    seat.onclick = () => toggleSeat(seatId);
+                    seat.title = `${row}排${col}座 (分区内: ${seatNumberInSubarea}号)`;
                     
                     arcRow.appendChild(seat);
                     appState.seatMapData.push({
                         id: seatId,
                         row: row,
                         col: col,
+                        subareaSeatNumber: seatNumberInSubarea,
                         element: seat
                     });
                 }
@@ -1223,7 +1424,8 @@
                 container.appendChild(arcRow);
             }
             
-            console.log(`生成 ${subarea.name} 座位图，${endRow - startRow + 1}排 × ${endCol - startCol + 1}列`);
+            const totalSeats = (endRow - startRow + 1) * (endCol - startCol + 1);
+            console.log(`生成 ${subarea.name} 座位图，${endRow - startRow + 1}排 × ${endCol - startCol + 1}列，共${totalSeats}个座位`);
         }
 
         // ==================== 包场功能 ====================
@@ -1233,7 +1435,7 @@
             const subarea = appState.currentSubarea;
             const areaName = appState.currentArea.name;
             
-            if (!confirm(`确定要包下「${subarea.name}」的所有可用座位吗？\n\n` +
+            if (!confirm(`确定要包下「${subarea.name}」的所有座位吗？\n\n` +
                         `分区：${areaName} - ${subarea.name}\n` +
                         `座位范围：${subarea.rowRange[0]}-${subarea.rowRange[1]}排，${subarea.colRange[0]}-${subarea.colRange[1]}列`)) {
                 return;
@@ -1242,15 +1444,13 @@
             // 先清空当前选择
             clearSelection();
             
-            // 选择该分区所有可用座位
+            // 选择该分区所有座位
             let selectedCount = 0;
             appState.seatMapData.forEach(seat => {
-                if (!appState.bookedSeats.has(seat.id)) {
-                    appState.selectedSeats.add(seat.id);
-                    seat.element.classList.add('selected');
-                    seat.element.classList.remove('available');
-                    selectedCount++;
-                }
+                appState.selectedSeats.add(seat.id);
+                seat.element.classList.add('selected');
+                seat.element.classList.remove('available');
+                selectedCount++;
             });
             
             // 更新显示
@@ -1289,11 +1489,12 @@
             listContainer.innerHTML = '';
             
             appState.selectedSeats.forEach(seatId => {
-                const match = seatId.match(/R(\d+)-C(\d+)/);
+                const match = seatId.match(/R(\d+)-C(\d+)-S(\d+)/);
                 if (match) {
                     const tag = document.createElement('span');
                     tag.className = 'seat-tag';
-                    tag.textContent = `${match[1]}排${match[2]}座`;
+                    // 显示分区内座位序号
+                    tag.textContent = `${match[3]}号座`;
                     listContainer.appendChild(tag);
                 }
             });
@@ -1301,11 +1502,6 @@
             // 更新座位视觉状态
             if (appState.seatMapData) {
                 appState.seatMapData.forEach(seat => {
-                    if (appState.bookedSeats.has(seat.id)) {
-                        // 已售座位保持不变
-                        return;
-                    }
-                    
                     if (appState.selectedSeats.has(seat.id)) {
                         seat.element.classList.add('selected');
                         seat.element.classList.remove('available');
@@ -1348,8 +1544,8 @@
             // 更新确认页面信息
             const seatIds = Array.from(appState.selectedSeats);
             const displaySeats = seatIds.map(seatId => {
-                const match = seatId.match(/R(\d+)-C(\d+)/);
-                return match ? `${match[1]}排${match[2]}座` : seatId;
+                const match = seatId.match(/R(\d+)-C(\d+)-S(\d+)/);
+                return match ? `${match[3]}号座` : seatId;
             }).join(', ');
             
             document.getElementById('confirmSeatCount').textContent = appState.selectedSeats.size;
@@ -1374,12 +1570,69 @@
             showPage('SeatSelect');
         }
 
-        function proceedToPayment() {
+        function showPaymentModal() {
+            // 更新支付金额
+            document.getElementById('paymentAmount').textContent = appState.currentPrice + ' 元';
+            
+            // 重置倒计时
+            appState.countdown = 30;
+            document.getElementById('countdown').textContent = appState.countdown;
+            
+            // 显示支付弹窗
+            document.getElementById('paymentModal').classList.add('active');
+            
+            // 开始倒计时
+            startPaymentTimer();
+        }
+
+        function startPaymentTimer() {
+            // 清除之前的定时器
+            if (appState.paymentTimer) {
+                clearInterval(appState.paymentTimer);
+            }
+            
+            appState.paymentTimer = setInterval(() => {
+                appState.countdown--;
+                document.getElementById('countdown').textContent = appState.countdown;
+                
+                if (appState.countdown <= 0) {
+                    clearInterval(appState.paymentTimer);
+                    cancelPayment();
+                }
+            }, 1000);
+        }
+
+        function cancelPayment() {
+            // 清除定时器
+            if (appState.paymentTimer) {
+                clearInterval(appState.paymentTimer);
+                appState.paymentTimer = null;
+            }
+            
+            // 隐藏支付弹窗
+            document.getElementById('paymentModal').classList.remove('active');
+        }
+
+        function completePayment() {
+            // 清除定时器
+            if (appState.paymentTimer) {
+                clearInterval(appState.paymentTimer);
+                appState.paymentTimer = null;
+            }
+            
+            // 隐藏支付弹窗
+            document.getElementById('paymentModal').classList.remove('active');
+            
+            // 生成门票
+            generateTicket();
+        }
+
+        function generateTicket() {
             // 更新门票信息
             const seatIds = Array.from(appState.selectedSeats);
             const displaySeats = seatIds.map(seatId => {
-                const match = seatId.match(/R(\d+)-C(\d+)/);
-                return match ? `${match[1]}排${match[2]}座` : seatId;
+                const match = seatId.match(/R(\d+)-C(\d+)-S(\d+)/);
+                return match ? `${match[3]}号座` : seatId;
             }).join(', ');
             
             document.getElementById('ticketSeats').textContent = displaySeats;
@@ -1394,6 +1647,16 @@
                 Math.floor(Math.random() * 1000).toString().padStart(3, '0');
             document.getElementById('ticketNumber').textContent = ticketNumber;
             
+            // 设置自定义消息
+            const seatCount = appState.selectedSeats.size;
+            if (seatCount >= 50) {
+                document.getElementById('ticketMessage').textContent = '🎉 包场体验，享受专属影院！';
+            } else if (seatCount >= 10) {
+                document.getElementById('ticketMessage').textContent = '👨‍👩‍👧‍👦 家庭/团体观影，共享美好时光！';
+            } else {
+                document.getElementById('ticketMessage').textContent = '🎬 感谢支持，祝观影愉快！';
+            }
+            
             // 隐藏确认页面，显示门票页面
             document.getElementById('confirmationSection').classList.remove('active');
             document.getElementById('ticketSection').classList.add('active');
@@ -1404,16 +1667,16 @@
             alert('🎉 支付成功！门票已生成。');
         }
 
-        function saveTicket() {
-            alert('✅ 门票已保存到本地（模拟功能）');
-        }
-
         // ==================== 辅助函数 ====================
         function updateTicketInfo() {
             const now = new Date();
             const eventDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
             const formattedDate = `${eventDate.getFullYear()}年${eventDate.getMonth() + 1}月${eventDate.getDate()}日 19:30`;
             document.getElementById('ticketDate').textContent = formattedDate;
+        }
+
+        function saveTicket() {
+            alert('✅ 门票已保存到本地（模拟功能）');
         }
 
         // ==================== 导出到全局 ====================
@@ -1427,7 +1690,9 @@
         window.clearSelection = clearSelection;
         window.confirmSelection = confirmSelection;
         window.backToSeatSelection = backToSeatSelection;
-        window.proceedToPayment = proceedToPayment;
+        window.showPaymentModal = showPaymentModal;
+        window.cancelPayment = cancelPayment;
+        window.completePayment = completePayment;
         window.saveTicket = saveTicket;
     </script>
 </body>
